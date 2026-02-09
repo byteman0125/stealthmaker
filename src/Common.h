@@ -59,6 +59,7 @@ std::wstring GetProcessPath(DWORD processId);
 std::vector<WindowInfo> EnumVisibleWindows();
 std::vector<WindowInfo> EnumProtectedWindows();
 std::vector<HWND> GetProcessWindows(DWORD processId);
+std::vector<HWND> GetAllProcessWindows(DWORD processId);
 bool IsWindowProtected(HWND hwnd);
 DWORD FindProcessByPath(const std::wstring& path);
 

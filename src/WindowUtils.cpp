@@ -97,10 +97,27 @@ static BOOL CALLBACK EnumProcessWindowsProc(HWND hwnd, LPARAM lp) {
     return TRUE;
 }
 
+static BOOL CALLBACK EnumAllProcessWindowsProc(HWND hwnd, LPARAM lp) {
+    auto* d = (EnumProcData*)lp;
+    DWORD pid = 0;
+    GetWindowThreadProcessId(hwnd, &pid);
+    if (pid == d->pid && !GetWindow(hwnd, GW_OWNER)) {
+        d->out.push_back(hwnd);
+    }
+    return TRUE;
+}
+
 std::vector<HWND> GetProcessWindows(DWORD processId) {
     EnumProcData d = {};
     d.pid = processId;
     EnumWindows(EnumProcessWindowsProc, (LPARAM)&d);
+    return d.out;
+}
+
+std::vector<HWND> GetAllProcessWindows(DWORD processId) {
+    EnumProcData d = {};
+    d.pid = processId;
+    EnumWindows(EnumAllProcessWindowsProc, (LPARAM)&d);
     return d.out;
 }
 

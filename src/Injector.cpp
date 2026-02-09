@@ -28,7 +28,7 @@ static DWORD_PTR GetFunctionOffset(FARPROC func) {
 }
 
 bool InjectAndProtect(DWORD processId) {
-    std::vector<HWND> windows = GetProcessWindows(processId);
+    std::vector<HWND> windows = GetAllProcessWindows(processId);
     if (windows.empty()) return false;
     HANDLE hProcess = OpenProcess(PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ, FALSE, processId);
     if (!hProcess) return false;
@@ -94,7 +94,7 @@ bool InjectAndProtect(DWORD processId) {
 }
 
 bool InjectAndUnprotect(DWORD processId) {
-    std::vector<HWND> windows = GetProcessWindows(processId);
+    std::vector<HWND> windows = GetAllProcessWindows(processId);
     if (windows.empty()) return false;
     HANDLE hProcess = OpenProcess(PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ, FALSE, processId);
     if (!hProcess) return false;

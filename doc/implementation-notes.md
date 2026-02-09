@@ -46,6 +46,7 @@ StealthMaker/
 2. **Protection**: InjectDll loads in target → CreateRemoteThread calls SetProtectThread(hwnd) for each window
 3. **Borders**: One overlay per window, updated every 1s when auto-monitor is on
 4. **Running status**: Poll every 10s, match by process path when processId was 0
+5. **All windows protection**: Uses `GetAllProcessWindows` (includes hidden windows) for injection; `GetProcessWindows` (visible only) for border overlays
 
 ### Build
 
