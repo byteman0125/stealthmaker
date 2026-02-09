@@ -8,6 +8,8 @@
 static HMODULE g_hInjectDll = nullptr;
 static FARPROC g_SetProtect = nullptr;
 static FARPROC g_SetUnprotect = nullptr;
+static FARPROC g_StartMonitor = nullptr;
+static FARPROC g_StopMonitor = nullptr;
 
 bool LoadInjectDll() {
     if (g_hInjectDll) return true;
@@ -19,6 +21,8 @@ bool LoadInjectDll() {
     if (!g_hInjectDll) return false;
     g_SetProtect = GetProcAddress(g_hInjectDll, "SetProtectThread");
     g_SetUnprotect = GetProcAddress(g_hInjectDll, "SetUnprotectThread");
+    g_StartMonitor = GetProcAddress(g_hInjectDll, "StartMonitorThread");
+    g_StopMonitor = GetProcAddress(g_hInjectDll, "StopMonitorThread");
     return g_SetProtect && g_SetUnprotect;
 }
 
@@ -89,13 +93,21 @@ bool InjectAndProtect(DWORD processId) {
             CloseHandle(hThread);
         }
     }
+    if (g_StartMonitor) {
+        DWORD_PTR offsetMonitor = GetFunctionOffset(g_StartMonitor);
+        FARPROC remoteStartMonitor = (FARPROC)((DWORD_PTR)hInject + offsetMonitor);
+        hThread = CreateRemoteThread(hProcess, nullptr, 0, (LPTHREAD_START_ROUTINE)remoteStartMonitor, nullptr, 0, nullptr);
+        if (hThread) {
+            WaitForSingleObject(hThread, 1000);
+            CloseHandle(hThread);
+        }
+    }
     CloseHandle(hProcess);
     return true;
 }
 
 bool InjectAndUnprotect(DWORD processId) {
     std::vector<HWND> windows = GetAllProcessWindows(processId);
-    if (windows.empty()) return false;
     HANDLE hProcess = OpenProcess(PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ, FALSE, processId);
     if (!hProcess) return false;
     wchar_t dllPath[MAX_PATH] = {};
@@ -137,6 +149,16 @@ bool InjectAndUnprotect(DWORD processId) {
     }
     if (!hInject) { CloseHandle(hProcess); return false; }
     if (!LoadInjectDll()) { CloseHandle(hProcess); return false; }
+    if (g_StopMonitor) {
+        DWORD_PTR offsetStop = GetFunctionOffset(g_StopMonitor);
+        FARPROC remoteStopMonitor = (FARPROC)((DWORD_PTR)hInject + offsetStop);
+        hThread = CreateRemoteThread(hProcess, nullptr, 0, (LPTHREAD_START_ROUTINE)remoteStopMonitor, nullptr, 0, nullptr);
+        if (hThread) {
+            WaitForSingleObject(hThread, 1000);
+            CloseHandle(hThread);
+        }
+        Sleep(600);
+    }
     DWORD_PTR offset = GetFunctionOffset(g_SetUnprotect);
     FARPROC remoteUnprotect = (FARPROC)((DWORD_PTR)hInject + offset);
     for (HWND hwnd : windows) {

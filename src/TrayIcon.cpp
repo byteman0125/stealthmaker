@@ -30,7 +30,7 @@ void ShowTrayContextMenu(HWND hwnd, const std::vector<ConfigEntry>& entries, int
         std::wstring label = e.name + L" (" + (e.processId ? std::to_wstring(e.processId) : L"N/A") + L")";
         std::wstring prefix = e.isRunning ? (e.isProtected ? L"\x25CF " : L"\x25CB ") : L"\x25E6 ";
         HMENU sub = CreatePopupMenu();
-        AppendMenuW(sub, MF_STRING, ID_TRAY_APP_BASE + (int)i * 10 + 1, L"Active/Deactive");
+        AppendMenuW(sub, MF_STRING, ID_TRAY_APP_BASE + (int)i * 10 + 1, e.active ? L"Deactive" : L"Active");
         if (!e.isRunning) AppendMenuW(sub, MF_STRING, ID_TRAY_APP_BASE + (int)i * 10 + 2, L"Start");
         AppendMenuW(hMenu, MF_POPUP | MF_STRING, (UINT_PTR)sub, (prefix + label).c_str());
     }

@@ -40,17 +40,19 @@ HWND CreateBorderOverlay(HWND targetHwnd) {
     CreateBorderOverlays();
     RECT rc;
     GetWindowRect(targetHwnd, &rc);
-    int w = rc.right - rc.left + 8;
-    int h = rc.bottom - rc.top + 8;
+    const int pad = 6;
+    int w = rc.right - rc.left + pad * 2;
+    int h = rc.bottom - rc.top + pad * 2;
     HWND hwnd = CreateWindowExW(
         WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST | WS_EX_NOACTIVATE,
         L"StealthMakerBorder",
         nullptr,
         WS_POPUP,
-        rc.left - 4, rc.top - 4, w, h,
+        rc.left - pad, rc.top - pad, w, h,
         nullptr, nullptr, GetModuleHandle(nullptr), nullptr);
     if (hwnd) {
         SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
+        SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW | SWP_NOACTIVATE);
         ShowWindow(hwnd, SW_SHOWNOACTIVATE);
         g_borderMap[targetHwnd] = hwnd;
     }
@@ -67,7 +69,8 @@ void UpdateBorderOverlay(HWND targetHwnd) {
     }
     RECT rc;
     GetWindowRect(targetHwnd, &rc);
-    SetWindowPos(it->second, HWND_TOPMOST, rc.left - 4, rc.top - 4, rc.right - rc.left + 8, rc.bottom - rc.top + 8, SWP_NOACTIVATE);
+    const int pad = 6;
+    SetWindowPos(it->second, HWND_TOPMOST, rc.left - pad, rc.top - pad, rc.right - rc.left + pad * 2, rc.bottom - rc.top + pad * 2, SWP_NOACTIVATE);
 }
 
 void DestroyBorderOverlay(HWND targetHwnd) {

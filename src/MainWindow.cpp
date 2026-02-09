@@ -396,12 +396,12 @@ static void ApplyProtection(int index) {
     auto& e = g_config[index];
     if (!e.processId) return;
     if (!g_captureProtection) return;
+    auto windows = GetProcessWindows(e.processId);
+    for (HWND hwnd : windows) {
+        CreateBorderOverlay(hwnd);
+    }
     if (InjectAndProtect(e.processId)) {
         e.isProtected = true;
-        auto windows = GetProcessWindows(e.processId);
-        for (HWND hwnd : windows) {
-            CreateBorderOverlay(hwnd);
-        }
         if (!windows.empty()) e.mainHwnd = windows[0];
     }
 }
