@@ -1,0 +1,43 @@
+# Build output
+build/
+out/
+*.exe
+*.dll
+*.exp
+*.lib
+*.obj
+*.pdb
+*.ilk
+*.iobj
+*.ipdb
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# Visual Studio
+.vs/
+*.vcxproj
+*.vcxproj.filters
+*.sln
+*.user
+*.suo
+x64/
+Debug/
+Release/
+*.tlog/
+*.lastbuildstate
+*.recipe
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store

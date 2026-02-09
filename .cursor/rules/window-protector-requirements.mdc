@@ -1,0 +1,251 @@
+---
+description: Functional and technical requirements for StealthMaker app
+alwaysApply: true
+---
+
+# Window Protector - Screen Share Blocker Requirements
+
+## Functional Requirements
+
+### Core Functions
+
+**Display Running Applications**
+- **Two separate controls**: List above, Configured Apps List table below
+- **Normal mode (list)**: Show **only** applications that have the invisible feature applied (protected apps)
+- **Select app mode** (when Add clicked): List shows **all running applications** with visible windows - **one entry per process**
+- **Visible windows only**: Only include processes that have visible windows (exclude background processes)
+- Display format: `[ProcessId] WindowTitle`
+- Auto-refresh capability
+
+**Select Applications**
+- Single selection only (one app at a time in Add mode)
+- **Persistence**: Store app ID when selected; persist for next session (saved apps survive app restart)
+
+**Add Applications**
+- "Add" button switches to **select app mode** - UI changes to show running apps for selection
+- **Single selection only** - user selects one app; **after selection**: store immediately, make invisible, **leave select mode**
+- **Cancel**: Press **Escape** to leave select mode without selecting
+- Capture executable file path from process when adding
+- **Ignore duplicates**: If same process path already in list, do not add again (one config per path)
+
+**Protect Applications**
+- Apply screen capture protection; **protect all windows of the process** (not just one window)
+- **One config row per path**: Same exe path = one row; protect **all running instances** of that path
+- Make protected windows invisible to:
+  - Screen recording software
+  - Screenshot tools
+  - Screen sharing applications
+
+**Draw dotted red border around protected windows**
+- **One border overlay per window** (each window gets its own border)
+
+**Unprotect Applications** (via Deactive button)
+- Remove screen capture protection from all windows of the process
+- Remove dotted border
+
+### Visual Border Indicator
+
+- Red dotted line border around protected windows
+- Border thickness: 4 pixels
+- Dash pattern: 10 pixels on, 5 pixels off
+- Display "🛡️ PROTECTED" label on border
+- Border should be click-through (transparent to mouse events)
+
+### Auto-Monitor Mode
+
+- Optional feature to continuously monitor protected windows
+- Update border position when window moves or resizes
+- Remove border if protected window is closed
+- Update frequency: Every 1 second
+
+### Configured Apps List
+
+- Display stored/configured apps in a list; **one row per path** (one config per process path)
+- Each row shows: **Process ID**, **App ID**, **Active/Deactive** button, **Delete** button
+- When not running: show **"N/A"** or **"-"** for Process ID and App ID columns
+- Use Active/Deactive button to toggle protection status for each app
+- **Running status**: Show whether each stored app is Running or Not Running
+- **Visual indicator** (icons or color coding):
+  - 🟢 / Dark: Running, not invisible
+  - 🔵 / Blue: Running and set as invisible (protected)
+  - ⚪ / Gray: Not running
+- **Running status check**: Poll every 10 seconds to update Running/Not Running for each stored app
+- **Delete button** - remove app from configured list
+- **... (More) button** on each row:
+  - Shows/sets file path used to run the current app (allow edit if needed)
+  - If Running status is OFF: display "Start" button to launch the app using stored path
+  - If Running status is ON: show path info only (app already running)
+  - If path invalid: **prompt user to browse** for new path
+
+### Refresh Window List
+
+- Manual refresh button to update list of protected applications (those with invisible feature)
+- Show count of protected windows
+
+### Run with System Start
+
+- App should run automatically when Windows starts (add to startup)
+- Option to enable/disable "Run at system startup" - **default: OFF** (user opt-in)
+
+### Auto-Apply on Startup
+
+- When app starts and loads persisted config: **auto-apply protection** to any running instances whose Active status is on
+
+### System Tray Icon
+
+- Use **tray icon** (system tray / notification area)
+- **Icon**: Shield design, use default/embedded icon
+- **Double-click** tray icon to show main window (or bring to front if already visible)
+- Tray menu shows **app list** with format: `Name(id)` where **Name = Window title**, **id = Process ID**
+- **Status icons** (Windows context menus don't support colored text; use icons/prefixes):
+  - 🟢 (green): App is running, not set as invisible
+  - 🔵 (blue): App is running and set as invisible (protected)
+  - ⚪ (white/gray): App is not running
+- **Sub menu** for each app item:
+  - **Active/Deactive** - toggle protection
+  - **Start** - (shown only when app is not running) launch app using stored path
+- **Top-level menu**: **Exit** - fully quit the app
+
+### Status Messages
+
+- Display success/failure messages
+- Show count of protected/unprotected windows
+- Show current monitoring status
+
+---
+
+## User Interface Requirements
+
+### Main Window Components
+
+- Title: **"StealthMaker"**
+- **List box** (above) - normal mode: protected apps only; select mode: running apps with visible windows
+- **Configured Apps List** (below) - table of all configured apps
+- "Add" button - switches to select app mode; Escape to cancel
+- "Refresh List" button
+- "Auto-monitor protected windows" checkbox - **default: ON**
+- **Configured Apps List** (table below) - columns:
+  - Process ID
+  - App ID
+  - Active/Deactive button (toggle protection)
+  - Delete button
+  - Running status - color: dark (running), blue (invisible), gray (not running)
+  - ... (More) button - opens options: file path, Start button (when not running)
+- **Tray icon** - double-click to show main window; app list menu (WindowTitle(ProcessID)), status icons (🟢🔵⚪), sub menu: Active/Deactive, Start (if not running)
+- Status label at bottom
+- Option for "Run at system startup" - **default: OFF**
+
+### Behavior
+
+- Window size: **fixed 600×500 pixels** (not resizable)
+- Centered on screen at startup
+- Show warning if no application selected
+- Close all borders when main app closes
+- **Startup**: Run with system start when option enabled
+- **Hide from taskbar**: Use `WS_EX_TOOLWINDOW` so main window does not appear in taskbar
+- **Main window**: Do not exit on close; **minimize to tray** instead
+- **No global hotkey** for show/hide
+- **Hide from taskbar**: Main window should not appear in taskbar when minimized
+
+---
+
+## Technical Requirements
+
+### Technology Stack
+
+- **C++/Win32** - Native Windows application
+- No .NET runtime; direct Windows API usage
+- Build with MSVC (Visual Studio) or MinGW
+- **Single instance**: Use mutex; if already running, **bring existing window to front**
+
+### Minimum Windows Version
+
+- `WDA_EXCLUDEFROMCAPTURE` requires Windows 10 2004 (May 2020) or later
+- No formal requirement in spec; document compatibility separately
+
+### Windows API Integration
+
+- Use `SetWindowDisplayAffinity` API with `WDA_EXCLUDEFROMCAPTURE` flag
+- Use `GetWindowRect` to get window position and size
+- Use `IsWindow` to check if window still exists
+
+### Window Protection
+
+- Apply protection to target window handle (HWND)
+- **Protect all windows of the process** - when protecting, apply to every window belonging to the same process
+- **App ID = HWND** (window handle); use the handle directly, do not convert to GetWindowLong UI id or other window id
+- **Duplicate check**: Before adding, match by process path; ignore if already in list
+- Maintain dictionary of protected windows and their borders
+
+### Border Overlay (Win32)
+
+- **One overlay per window** (each protected window gets its own border)
+- Borderless, transparent window (`WS_EX_LAYERED`, `WS_EX_TRANSPARENT`)
+- Always on top (`HWND_TOPMOST` / `SetWindowPos`)
+- Click-through (`WS_EX_TRANSPARENT` or `WS_EX_LAYERED`)
+- Update position dynamically via `SetWindowPos` or `MoveWindow`
+
+### Persistence & Startup
+
+- **Storage**: Windows **Registry** at `HKEY_CURRENT_USER\Software\StealthMaker\Config`
+- **Process path**: Store **full path** (e.g. `C:\Program Files\App\app.exe`); no normalization
+- **Matching when app restarts**: Match by **process path**; use **primary window title** (first one found) for display
+- **One config per path**: Protect all running instances of that path
+- **Process ID in UI**: Show **primary/main window** Process ID only (when multiple instances)
+- **Process path**: For matching when app restarts (identify running instances)
+- **File path**: For launching app via Start button (may differ from process path in edge cases)
+- Store: name (window title), process path, file path, active status
+- Run at system startup: **Registry Run key** `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`, value name: **"StealthMaker"**
+- Load persisted configured apps on app launch
+
+### Tray Icon
+
+- Use `Shell_NotifyIcon` (NIF_*) / `NOTIFYICONDATA` for system tray
+- **Double-click** (`NIN_DBLCLK`) to show main window
+- Build context menu with `CreatePopupMenu` / `TrackPopupMenu`
+- **Double-click**: Show main window or bring to front if already visible
+- **Top-level**: **Exit** (fully quit app)
+- App list items (WindowTitle(ProcessID)), status icons (🟢🔵⚪); sub menus per item
+- Each item has sub menu: Active/Deactive, Start (conditional)
+
+### App Launch
+
+- Use stored file path to launch app when "Start" button clicked (when app is not running)
+- Use `ShellExecute` or `CreateProcess` to run executable
+- **Invalid path**: If path no longer valid (moved/deleted), **prompt user to browse** for new path
+
+### Elevation
+
+- **Require administrator** to protect any process (run as admin)
+- **Use manifest**: Always request admin at launch - `requestedExecutionLevel` = `requireAdministrator`
+
+---
+
+## Data Requirements
+
+### Store for each protected window
+
+- Window handle (IntPtr)
+- Window title (string)
+- Associated border overlay window (HWND)
+- Process ID
+
+### Store for each configured app (persisted)
+
+- **Process path**: For matching when app restarts
+- **File path**: For launching via Start button (keep both, may differ)
+- **Identifier for matching**: Process path; use primary window title (first found) for display
+- App ID = HWND when running; use directly for runtime
+- Name = Window title (for tray/menu display; id in tray = Process ID)
+- Process ID (runtime; changes each launch)
+- File path (executable path to launch app)
+- Active/Deactive status (protection on/off)
+- Running status (polled every 10s)
+- **One row per path** in UI (one config per process path)
+
+### Application state
+
+- List of currently protected windows
+- List of configured apps (persisted across sessions)
+- Auto-monitor enabled/disabled status
+- Run at system startup enabled/disabled
